@@ -49,6 +49,26 @@ class ProblemSubmissionCountSerializer(serializers.Serializer):
     correct = serializers.IntegerField(default=0)
 
 
+class ConsolidatedAnswerDistributionSerializer(serializers.Serializer):
+    """
+    Serializer for consolidated answer distributions.
+    """
+
+    course_id = serializers.CharField(max_length=255)
+    module_id = serializers.CharField(max_length=255)
+    part_id = serializers.CharField(max_length=255)
+    correct = serializers.BooleanField()
+    count = serializers.IntegerField()
+    value_id = serializers.CharField(max_length=255)
+    answer_value_text = serializers.CharField()
+    answer_value_numeric = serializers.FloatField()
+    variant = serializers.IntegerField()
+    consolidated_variant = serializers.BooleanField()
+    problem_display_name = serializers.CharField()
+    question_text = serializers.CharField()
+    created = serializers.DateTimeField()
+
+
 class ProblemResponseAnswerDistributionSerializer(ModelSerializerWithCreatedField):
     """
     Representation of the Answer Distribution table, without id.

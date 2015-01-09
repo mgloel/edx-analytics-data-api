@@ -5,11 +5,12 @@ from rest_framework.exceptions import NotAcceptable
 
 from analytics_data_api.v0.models import ProblemResponseAnswerDistribution
 from analytics_data_api.v0.serializers import ProblemResponseAnswerDistributionSerializer, \
-    ProblemSubmissionCountSerializer
+    ProblemSubmissionCountSerializer, ConsolidatedAnswerDistributionSerializer
 from analytics_data_api.v0.models import GradeDistribution
 from analytics_data_api.v0.serializers import GradeDistributionSerializer
 from analytics_data_api.v0.models import SequentialOpenDistribution
 from analytics_data_api.v0.serializers import SequentialOpenDistributionSerializer
+from analytics_data_api.utils import consolidate_answers
 
 
 class SubmissionCountsListView(generics.ListAPIView):
@@ -96,6 +97,13 @@ class ProblemResponseAnswerDistributionView(generics.ListAPIView):
             * variant: For randomized problems, the random seed used. If problem
               is not randomized, value is null.
             * created: The date the count was computed.
+
+    **Parameters**
+
+        You can request consolidation of response counts for erroneously randomized problems.
+
+        consolidate -- If True, attempt to consolidate responses, otherwise, do not.
+
     """
 
     serializer_class = ProblemResponseAnswerDistributionSerializer
@@ -104,7 +112,20 @@ class ProblemResponseAnswerDistributionView(generics.ListAPIView):
     def get_queryset(self):
         """Select all the answer distribution response having to do with this usage of the problem."""
         problem_id = self.kwargs.get('problem_id')
-        return ProblemResponseAnswerDistribution.objects.filter(module_id=problem_id)
+        consolidate = self.request.QUERY_PARAMS.get('consolidate')
+
+        queryset = ProblemResponseAnswerDistribution.objects.filter(module_id=problem_id).order_by('part_id')
+        
+        if not consolidate:
+            return queryset
+
+        self.serializer_class = ConsolidatedAnswerDistributionSerializer
+        consolidated_rows = []
+
+        for part_id, part in groupby(queryset, lambda x: x.part_id):
+            consolidated_rows += consolidate_answers([answer for answer in part])
+
+        return consolidated_rows
 
 
 class GradeDistributionView(generics.ListAPIView):
