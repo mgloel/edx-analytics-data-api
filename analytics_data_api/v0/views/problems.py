@@ -115,13 +115,14 @@ class ProblemResponseAnswerDistributionView(generics.ListAPIView):
         consolidate = self.request.QUERY_PARAMS.get('consolidate')
 
         queryset = ProblemResponseAnswerDistribution.objects.filter(module_id=problem_id).order_by('part_id')
-        
+
         if not consolidate:
             return queryset
 
         self.serializer_class = ConsolidatedAnswerDistributionSerializer
         consolidated_rows = []
 
+        # pylint: disable=unused-variable
         for part_id, part in groupby(queryset, lambda x: x.part_id):
             consolidated_rows += consolidate_answers([answer for answer in part])
 

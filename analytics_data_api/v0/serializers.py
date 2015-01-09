@@ -66,7 +66,7 @@ class ConsolidatedAnswerDistributionSerializer(serializers.Serializer):
     consolidated_variant = serializers.BooleanField()
     problem_display_name = serializers.CharField()
     question_text = serializers.CharField()
-    created = serializers.DateTimeField()
+    created = serializers.DateTimeField(format=settings.DATETIME_FORMAT)
 
 
 class ProblemResponseAnswerDistributionSerializer(ModelSerializerWithCreatedField):

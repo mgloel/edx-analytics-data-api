@@ -58,25 +58,37 @@ class AnswerDistributionTests(TestCaseWithAuthentication):
             variant=345,
             count=2
         )
+        cls.ad3 = G(
+            models.ProblemResponseAnswerDistribution,
+            course_id=cls.course_id,
+            module_id=cls.module_id,
+            part_id=cls.part_id,
+        )
 
     def test_get(self):
         response = self.authenticated_get('/api/v0/problems/%s%s' % (self.module_id, self.path))
         self.assertEquals(response.status_code, 200)
 
-        expected_dict = ProblemResponseAnswerDistributionSerializer(self.ad1).data
-        self.assertDictEqual(response.data[0], expected_dict)
+        expected_data = models.ProblemResponseAnswerDistribution.objects.filter(module_id=self.module_id)
+        expected_data = [ProblemResponseAnswerDistributionSerializer(answer).data for answer in expected_data]
+        self.assertEqual(response.data, expected_data)
 
     def test_consolidated_get(self):
-        response = self.authenticated_get('/api/v0/problems/{0}{1}?consolidate={2}'.format(self.module_id, self.path, True))
+        response = self.authenticated_get(
+            '/api/v0/problems/{0}{1}?consolidate={2}'.format(self.module_id, self.path, True))
         self.assertEquals(response.status_code, 200)
 
-        expected_response = ProblemResponseAnswerDistributionSerializer(self.ad1).data
-        expected_response['count'] += self.ad2.count
-        expected_response['variant'] = None
-        expected_response['consolidated_variant'] = True
+        expected_data = [
+            ProblemResponseAnswerDistributionSerializer(self.ad1).data,
+            ProblemResponseAnswerDistributionSerializer(self.ad3).data,
+        ]
+        expected_data[0]['count'] += self.ad2.count
+        expected_data[0]['variant'] = None
+        expected_data[0]['consolidated_variant'] = True
 
-        self.assertEquals(response.data[0], expected_response)
+        expected_data[1]['consolidated_variant'] = False
 
+        self.assertEquals(response.data, expected_data)
 
     def test_get_404(self):
         response = self.authenticated_get('/api/v0/problems/%s%s' % ("DOES-NOT-EXIST", self.path))
